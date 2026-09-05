@@ -48,3 +48,13 @@ const filtered = client.query({
   aggregations: [{ op: "count", as: "orders" }],
 });
 console.log("shipped/delivered 1k-100k:", filtered.toRows());
+
+// Date filter with ISO strings (normalized to epoch ms for the date column).
+const june = client.query({
+  filter: { op: "between", column: "orderedAt", low: "2025-06-01", high: "2025-06-30" },
+  aggregations: [
+    { op: "count", as: "orders" },
+    { op: "sum", column: "amount", as: "revenue" },
+  ],
+});
+console.log("june 2025:", june.toRows());

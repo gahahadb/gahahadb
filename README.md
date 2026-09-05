@@ -118,6 +118,10 @@ Design rules:
      aggregations: [{ op: "sum", column: "amount", as: "revenue" }],
      orderBy: [{ column: "revenue", desc: true }] }`,
   executed by `ColumnTable#query` entirely in the browser.
+- Null semantics are SQL-like: aggregations skip nulls, empty input yields
+  `count = 0` and `sum/avg/min/max = null`. Dates are strict ISO-8601 or
+  `Date` instances (`"A-1"` is a string, not a date); mixed-type columns
+  are rejected. Tables accept an explicit schema to pin types.
 
 ## Usage
 
@@ -128,7 +132,7 @@ Requires Node.js >= 18 and [pnpm](https://pnpm.io/) (pinned via
 pnpm install            # install workspace (currently zero dependencies)
 pnpm build:snapshots    # generate snapshots/acme|globex.gahaha.json
 pnpm demo:node          # run dashboard queries locally (no server)
-pnpm test               # engine + server auth tests (7 passing)
+pnpm test               # engine + server auth tests (24 passing)
 pnpm start              # serve demo at http://localhost:3000
 ```
 

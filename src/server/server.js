@@ -25,8 +25,9 @@ import { join, dirname, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
-const snapshotsDir = join(root, "snapshots");
-const demoDir = join(root, "demo");
+export const DEFAULT_SNAPSHOTS_DIR = join(root, "snapshots");
+export const DEFAULT_DEMO_DIR = join(root, "demo");
+const DEFAULT_ENGINE_DIR = join(root, "src/engine");
 
 export const PORT = Number(process.env.PORT ?? 3000);
 
@@ -38,6 +39,11 @@ export const TOKENS = {
 
 function etagFor(bytes) {
   return `"${createHash("sha1").update(bytes).digest("hex").slice(0, 16)}"`;
+}
+
+/** True when `file` is inside `dir` (separator-aware, no sibling-prefix match). */
+function isInside(dir, file) {
+  return file === dir || file.startsWith(dir.endsWith("/") ? dir : `${dir}/`);
 }
 
 function sendJson(res, status, obj, headers = {}) {
@@ -59,7 +65,16 @@ function sendFile(res, path, contentType) {
   return etag;
 }
 
-export function createApp() {
+/**
+ * @param {object} [opts]
+ * @param {string} [opts.snapshotsDir] override for tests (never touch real snapshots)
+ * @param {string} [opts.demoDir]
+ * @param {string} [opts.engineDir]
+ */
+export function createApp(opts = {}) {
+  const snapshotsDir = opts.snapshotsDir ?? DEFAULT_SNAPSHOTS_DIR;
+  const demoDir = opts.demoDir ?? DEFAULT_DEMO_DIR;
+  const engineDir = opts.engineDir ?? DEFAULT_ENGINE_DIR;
   return createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
 
@@ -81,7 +96,7 @@ export function createApp() {
         return sendJson(res, 403, { error: "forbidden for this tenant" });
       }
       const file = normalize(join(snapshotsDir, `${tenantId}.gahaha.json`));
-      if (!file.startsWith(snapshotsDir) || !existsSync(file)) {
+      if (!isInside(snapshotsDir, file) || !existsSync(file)) {
         return sendJson(res, 404, { error: "snapshot not found (run pnpm build:snapshots)" });
       }
       const bytes = readFileSync(file);
@@ -108,8 +123,8 @@ export function createApp() {
     }
     const engineMatch = url.pathname.match(/^\/engine\/(.+)$/);
     if (engineMatch) {
-      const file = normalize(join(root, "src/engine", engineMatch[1]));
-      if (!file.startsWith(join(root, "src/engine")) || !existsSync(file)) {
+      const file = normalize(join(engineDir, engineMatch[1]));
+      if (!isInside(engineDir, file) || !existsSync(file)) {
         return sendJson(res, 404, { error: "not found" });
       }
       return sendFile(res, file, "text/javascript; charset=utf-8");
@@ -122,7 +137,7 @@ export function createApp() {
 // Only listen when run directly (`node src/server/server.js`), not when imported by tests.
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const stats = ["acme", "globex"].map((t) => {
-    const f = join(snapshotsDir, `${t}.gahaha.json`);
+    const f = join(DEFAULT_SNAPSHOTS_DIR, `${t}.gahaha.json`);
     return existsSync(f) ? `${t}=${(statSync(f).size / 1024).toFixed(1)}KB` : `${t}=missing`;
   });
   createApp().listen(PORT, () => {

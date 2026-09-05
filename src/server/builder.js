@@ -51,7 +51,8 @@ export function generateOrders({ tenantId, rows, seed }) {
       status,
       quantity,
       amount: quantity * unitPrice,
-      orderedAt: base + Math.floor(rand() * 365 * 86400 * 1000),
+      // Date instance -> stored as a true `date` column (epoch ms in the snapshot).
+      orderedAt: new Date(base + Math.floor(rand() * 365 * 86400 * 1000)),
     });
   }
   return ColumnTable.fromRows(data);
