@@ -1,0 +1,17 @@
+{
+  "name": "gahahadb",
+  "version": "0.1.0",
+  "description": "GahahaDB prototype: download the dataset once, run OLAP in the browser. Zero server-side query compute.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "packageManager": "pnpm@11.8.0",
+  "scripts": {
+    "build:snapshots": "node src/server/builder.js",
+    "start": "node src/server/server.js",
+    "demo:node": "node examples/node-demo.mjs",
+    "test": "node --test test/engine.test.js test/server.test.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

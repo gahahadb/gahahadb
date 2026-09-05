@@ -88,6 +88,57 @@ GahahaDB explores how far we can take the apparently ridiculous idea:
 
 > **Just download the database. Gahaha.**
 
+## Prototype (v0.1.0)
+
+Zero dependencies, plain Node.js + browser ESM. No bundler, no database.
+
+```text
+src/engine/   local OLAP engine (browser + Node): columnar table, dict-encoded
+              strings, declarative filter/groupBy/agg/orderBy/limit queries
+src/server/   snapshot generation (builder.js) + delivery with auth (server.js)
+demo/         dashboard: downloads snapshot once, then queries locally
+examples/     node-demo.mjs — engine smoke test without a browser
+test/         node:test suites (engine + server auth)
+snapshots/    build artifacts: snapshots/<tenant>.gahaha.json (gitignored)
+```
+
+Design rules:
+
+- The server exposes **no `/api/query`**. It only serves immutable per-tenant
+  snapshots (`GET /api/snapshot/:tenantId`, `Bearer` token, ETag + 304).
+- A token resolves to exactly one tenant. Bytes for tenant A are never sent
+  to tenant B (`401` unknown token, `403` wrong tenant).
+- The snapshot format (v1, plain JSON) is the contract: `{ version, tenantId,
+  generatedAt, tables: { name: { rowCount, columns } } }`. String columns are
+  `{ type: "string", dict, codes }`; numbers/booleans/dates are arrays
+  (dates as epoch ms).
+- Dashboard queries are declarative JSON, e.g.
+  `{ filter: { op: "eq", column: "region", value: "EMEA" },
+     groupBy: ["product"],
+     aggregations: [{ op: "sum", column: "amount", as: "revenue" }],
+     orderBy: [{ column: "revenue", desc: true }] }`,
+  executed by `ColumnTable#query` entirely in the browser.
+
+## Usage
+
+Requires Node.js >= 18 and [pnpm](https://pnpm.io/) (pinned via
+`packageManager`; Corepack-enabled environments pick it up automatically).
+
+```sh
+pnpm install            # install workspace (currently zero dependencies)
+pnpm build:snapshots    # generate snapshots/acme|globex.gahaha.json
+pnpm demo:node          # run dashboard queries locally (no server)
+pnpm test               # engine + server auth tests (7 passing)
+pnpm start              # serve demo at http://localhost:3000
+```
+
+Then open `http://localhost:3000`, pick a tenant (token auto-fills as
+`token-<tenant>`), download the snapshot, and change filters — every
+aggregation runs locally (see the ms readout; server round-trips: zero).
+
+Measured on the synthetic dataset: 5000-row snapshot ≈ 252KB wire,
+~2.5ms per group-by locally.
+
 ## License
 
 Apache License 2.0

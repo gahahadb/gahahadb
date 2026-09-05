@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GahahaDB demo — OLAP in the browser</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+  fieldset { margin: 1rem 0; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  #meta { color: #555; }
+  canvas { border: 1px solid #ccc; width: 100%; height: 220px; }
+</style>
+</head>
+<body>
+<h1>GahahaDB demo</h1>
+<p>Snapshot is downloaded <strong>once</strong>. Every filter / aggregation below runs locally — no <code>/api/query</code> exists.</p>
+
+<fieldset>
+  <legend>1. Download authorized snapshot</legend>
+  <label>tenant
+    <select id="tenant">
+      <option value="acme">acme</option>
+      <option value="globex">globex</option>
+    </select>
+  </label>
+  <label>token <input id="token" value="token-acme" size="16" /></label>
+  <button id="load">Download snapshot</button>
+  <p id="meta">not loaded</p>
+</fieldset>
+
+<fieldset>
+  <legend>2. Query locally</legend>
+  <label>region
+    <select id="region">
+      <option value="">(all)</option>
+      <option>EMEA</option><option>APAC</option><option>AMER</option>
+    </select>
+  </label>
+  <label>group by
+    <select id="groupBy">
+      <option value="product">product</option>
+      <option value="region">region</option>
+      <option value="status">status</option>
+    </select>
+  </label>
+  <button id="run">Run (local)</button>
+  <p id="timing"></p>
+  <canvas id="chart" width="800" height="220"></canvas>
+  <table id="result"><thead></thead><tbody></tbody></table>
+</fieldset>
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>
